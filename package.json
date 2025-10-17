@@ -9,7 +9,7 @@
     },
     "scripts": {
         "build": "tsc",
-        "test": "node --test dist/**/*.test.js",
+        "test": "node --test dist/",
         "format": "prettier --write \"src/**/*.ts\"",
         "format:check": "prettier --check \"src/**/*.ts\"",
         "lint": "eslint \"src/**/*.ts\"",
