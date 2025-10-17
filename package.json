@@ -2,6 +2,7 @@
     "name": "sumem",
     "version": "0.0.1",
     "description": "CLI tool for summing application memory usage",
+    "repository": "gouline/sumem",
     "type": "module",
     "main": "dist/index.js",
     "bin": {
