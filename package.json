@@ -10,6 +10,7 @@
     },
     "scripts": {
         "build": "tsc",
+        "dev": "npm run build && node dist/cli.js",
         "test": "node --test dist/",
         "format": "prettier --write \"src/**/*.ts\"",
         "format:check": "prettier --check \"src/**/*.ts\"",

@@ -12,29 +12,53 @@ function main(): void {
     .version('1.0.0')
     .argument('<search-key>', 'Case-insensitive whole word to match process names and paths')
     .option('-l, --list', 'List all matched processes')
+    .option(
+      '-e, --exclude <pattern>',
+      'Exclude processes matching pattern (can be used multiple times)',
+      (value, previous: string[] = []) => {
+        return [...previous, value];
+      },
+      []
+    )
     .addHelpText(
       'after',
       `
 Examples:
   $ sumem app              # Sum memory of all processes matching "app"
   $ sumem --list app       # List and sum memory of all "app" processes
+  $ sumem -e helper app    # Sum "app" memory excluding "helper"
 `
     )
-    .action((searchKey: string, options: { list?: boolean }) => {
+    .action((searchKey: string, options: { list?: boolean; exclude?: string[] }) => {
       const listProcesses = options.list || false;
-      executeCommand(searchKey, listProcesses);
+      const excludePatterns = options.exclude || [];
+      executeCommand(searchKey, listProcesses, excludePatterns);
     });
 
   program.parse();
 }
 
-function executeCommand(searchKey: string, listProcesses: boolean): void {
+function executeCommand(
+  searchKey: string,
+  listProcesses: boolean,
+  excludePatterns: string[]
+): void {
   try {
     // Get all processes
     const allProcesses = getProcesses();
 
     // Filter by search key
-    const matchedProcesses = filterProcesses(allProcesses, searchKey);
+    let matchedProcesses = filterProcesses(allProcesses, searchKey);
+
+    // Apply exclude filters
+    if (excludePatterns.length > 0) {
+      matchedProcesses = matchedProcesses.filter((proc) => {
+        // Exclude if any exclude pattern matches
+        return !excludePatterns.some((pattern) => {
+          return filterProcesses([proc], pattern).length > 0;
+        });
+      });
+    }
 
     if (matchedProcesses.length === 0) {
       console.log(`No processes found matching "${searchKey}"`);

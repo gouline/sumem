@@ -101,3 +101,118 @@ test('formatBytes - should handle large values', () => {
   assert.ok(result.includes('GB'));
   assert.ok(result.includes('1.50'));
 });
+
+test('filterProcesses with exclude - should exclude processes matching exclude pattern', () => {
+  const processes: ProcessInfo[] = [
+    { pid: 1, name: 'Code', command: '/Applications/Code.app', memory: 1024 },
+    { pid: 2, name: 'Code Helper', command: '/Applications/Code Helper', memory: 2048 },
+    { pid: 3, name: 'Code Helper (GPU)', command: '/Applications/Code Helper (GPU)', memory: 512 },
+  ];
+
+  // First filter by search key 'code'
+  let filtered = filterProcesses(processes, 'code');
+  assert.equal(filtered.length, 3);
+
+  // Then exclude processes matching 'helper'
+  filtered = filtered.filter((proc) => {
+    return filterProcesses([proc], 'helper').length === 0;
+  });
+
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].pid, 1);
+  assert.equal(filtered[0].name, 'Code');
+});
+
+test('filterProcesses with multiple excludes - should exclude all matching patterns', () => {
+  const processes: ProcessInfo[] = [
+    { pid: 1, name: 'Safari', command: '/Applications/Safari.app', memory: 1024 },
+    { pid: 2, name: 'Safari Helper', command: '/Applications/Safari Helper', memory: 2048 },
+    {
+      pid: 3,
+      name: 'Safari Helper (GPU)',
+      command: '/Applications/Safari Helper (GPU)',
+      memory: 512,
+    },
+    { pid: 4, name: 'Safari Networking', command: '/Applications/Safari Networking', memory: 256 },
+  ];
+
+  // Filter by search key 'safari'
+  let filtered = filterProcesses(processes, 'safari');
+  assert.equal(filtered.length, 4);
+
+  // Exclude processes matching 'helper' or 'gpu'
+  const excludePatterns = ['helper', 'gpu'];
+  filtered = filtered.filter((proc) => {
+    return !excludePatterns.some((pattern) => {
+      return filterProcesses([proc], pattern).length > 0;
+    });
+  });
+
+  assert.equal(filtered.length, 2);
+  assert.equal(filtered[0].pid, 1);
+  assert.equal(filtered[0].name, 'Safari');
+  assert.equal(filtered[1].pid, 4);
+  assert.equal(filtered[1].name, 'Safari Networking');
+});
+
+test('filterProcesses with exclude - whole word matching should apply', () => {
+  const processes: ProcessInfo[] = [
+    { pid: 1, name: 'code', command: '/usr/bin/code', memory: 1024 },
+    { pid: 2, name: 'encoder', command: '/usr/bin/encoder', memory: 2048 },
+  ];
+
+  // Filter by search key 'code' - should only match process 1
+  let filtered = filterProcesses(processes, 'code');
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].pid, 1);
+
+  // Exclude with 'cod' should not exclude anything (partial word)
+  filtered = filtered.filter((proc) => {
+    return filterProcesses([proc], 'cod').length === 0;
+  });
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].pid, 1);
+
+  // Exclude with 'code' should exclude process 1
+  filtered = filterProcesses(processes, 'code');
+  filtered = filtered.filter((proc) => {
+    return filterProcesses([proc], 'code').length === 0;
+  });
+  assert.equal(filtered.length, 0);
+});
+
+test('filterProcesses with exclude - case insensitive matching should apply', () => {
+  const processes: ProcessInfo[] = [
+    { pid: 1, name: 'Safari', command: '/Applications/Safari.app', memory: 1024 },
+    { pid: 2, name: 'Safari Helper', command: '/Applications/Safari Helper', memory: 2048 },
+  ];
+
+  // Filter by 'safari'
+  let filtered = filterProcesses(processes, 'safari');
+  assert.equal(filtered.length, 2);
+
+  // Exclude with 'HELPER' (uppercase) should still exclude the helper process
+  filtered = filtered.filter((proc) => {
+    return filterProcesses([proc], 'HELPER').length === 0;
+  });
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].pid, 1);
+  assert.equal(filtered[0].name, 'Safari');
+});
+
+test('filterProcesses with exclude - no matches after exclude should work', () => {
+  const processes: ProcessInfo[] = [
+    { pid: 1, name: 'Code Helper', command: '/Applications/Code Helper', memory: 1024 },
+    { pid: 2, name: 'Code Helper (GPU)', command: '/Applications/Code Helper (GPU)', memory: 2048 },
+  ];
+
+  // Filter by 'code'
+  let filtered = filterProcesses(processes, 'code');
+  assert.equal(filtered.length, 2);
+
+  // Exclude all with 'helper'
+  filtered = filtered.filter((proc) => {
+    return filterProcesses([proc], 'helper').length === 0;
+  });
+  assert.equal(filtered.length, 0);
+});
