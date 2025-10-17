@@ -21,6 +21,7 @@ sumem [options] <search-key>
 ### Options
 
 - `-l, --list` - List all matched processes
+- `-e, --exclude <pattern>` - Exclude processes matching pattern (can be used multiple times)
 - `-h, --help` - Show help message
 
 ### Examples
@@ -31,6 +32,12 @@ sumem app
 
 # List and sum memory of all "app" processes
 sumem --list app
+
+# Sum "safari" memory excluding "gpu" and "helper" processes
+sumem -e gpu -e helper safari
+
+# List "code" processes excluding "helper"
+sumem -l -e helper code
 ```
 
 ## How it works
