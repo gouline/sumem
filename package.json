@@ -32,9 +32,6 @@
         "README.md",
         "LICENSE"
     ],
-    "engines": {
-        "node": ">=18.0.0"
-    },
     "devDependencies": {
         "@eslint/js": "^9.37.0",
         "@types/node": "^20.19.22",
